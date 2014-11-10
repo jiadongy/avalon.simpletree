@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" charset="utf-8" name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title></title>
+    <script src="./avalon.js"></script>
+    <script src="../js/base/jquery-1.11.1.js"></script>
+
+</head>
+<body ms-controller="test">
+
+
+    <div ms-widget="simpletree,$,$simpletreeOpt">
+
+    </div>
+<script>
+    require(["./simpletree"],function(){
+
+        avalon.define("test",function(vm){
+            vm.$tree={
+                children:[
+                    {name: 'C818',href:"#",
+                        children: [
+                            {name: '雷达调试',href:"#",
+                                children: [
+                                    {name: '相控阵选型',href:"#"}
+                                ]}
+                        ]}
+                ]
+            }
+            vm.$simpletreeOpt={
+                treeNodes:vm.$tree.children,
+                contextMenu:[{name:'New',handle:function(nodes,$event){
+                    $event;
+                }},{name:'Delete',handle:function($event){
+                    $event;
+                }}]
+            }
+        })
+        avalon.scan();
+    })
+</script>
+</body>
+</html>

@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" charset="utf-8" name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title></title>
+</head>
+<body>
+<style>
+    .menuStyle {
+        list-style: none;
+        padding : 1px;
+        margin : 0px;
+        display: list-item;
+        background-color : #fff;
+        border : 1px solid #999;
+        width : 100px;
+        opacity: 0.5;
+    }
+
+    .itemStyle {
+        margin: 0px;
+        color : #000;
+        font-size: 15px;
+        cursor : default;
+        padding : 3px;
+        border : 1px solid #fff;
+        background-color : transparent;
+    }
+
+    .menuStyle li:hover {
+        border: 1px solid #0a246a;
+        background-color : #b6bdd2
+    }
+
+    .shadowDiv {
+        background-color:#000;
+        position:absolute;
+        opacity:0.2;
+        z-index:499;
+    }
+    .menu {
+        min-width: 100px !important;
+    }
+</style>
+<script src="../js/avalon.js"></script>
+<link rel="stylesheet" href="../css/base/bootstrap.css">
+<script src="../js/globalConfig.js"></script>
+<link rel="stylesheet" href="simpletree.css">
+
+
+<div class="shadowDiv"></div>
+<div ms-controller="simpletree">
+    <ul class="simpletree"
+        ms-click="liveClick($event)"
+        ms-on-contextmenu="liveContextmenu($event)">
+        <li ms-include="'simpletreetmpl'" ms-repeat="treeData" ms-attr-treeid="el.$treeid"></li>
+
+
+    </ul>
+    <div id="simpletreeMenu">
+        <ul class="menu dropdown-menu">
+            <li ms-repeat="contextMenu"
+                ms-attr-menuIndex="$index"
+                ms-click="contextMenuHandler($event,$index)">
+                <a>{{el.name}}</a>
+            </li>
+        </ul>
+    </div>
+</div>
+
+<noscript id="simpletreetmpl">
+    <span class="button switch center_close"
+          ms-class="root_close      :el.isRoot"
+          ms-class-1="roots_open    :el.isRoot && el.open"
+          ms-class-2="center_open   :el.isParent && el.open"
+          ms-class-3="center_docu   :!el.isParent">
+    </span>
+    <a href="#2" ms-class="curSelectedNode: el.selected">
+        <span class="button ico_close"
+              ms-class="ico_open    :el.isParent && el.open"
+              ms-class-1="ico_docu  :!el.isParent"></span>
+        <!-- open变化时只通知了下面的ms-class="hide:!el.open" ， isParent变化时通知了上面四个，绑定只看第一个变量？？ -->
+        <span>{{el.name}}</span>
+    </a>
+    <ul class="line " ms-if="el.children.length" ms-class="hide:!el.open">
+        <li ms-include="'simpletreetmpl'" ms-repeat="el.children" ms-attr-treeid="el.$treeid"></li>
+    </ul>
+</noscript>
+
+<script>
+
+    require(['jquery','contextmenu','ready!'],function($){
+        $(document).click(function(e){
+            if(!$.contains($("#simpletreeMenu")[0],e.target))
+                $("#simpletreeMenu ul").hide();
+        })
+        data=[
+            {name: 'C818',
+                children: [
+                    {name: '雷达调试',
+                        children: [
+                            {name: '相控阵选型'}
+                        ]}
+                ]}
+        ];
+
+        tree = avalon.define("simpletree", function (vm) {
+
+            vm.contextMenu=[{name:'New',handle:function(nodes,$event){
+                $event;
+            }},{name:'Delete',handle:function($event){
+                $event;
+            }}]
+            vm.$skipArray=['treeHash','_selectedNode']
+
+            vm.$opts = {
+                expandAllAtFirst: true,
+                url:null,
+                multiSelect:false
+            }
+
+            vm.$container = $(".simpletree");
+            vm.treeHash={};
+            vm.treeData=[];
+            vm._selectedNode;
+
+            //代码缩写，注意放在vm.xxx后。不能用var xxx=vm.xxx=[],否则xxx还是为[]，非VM
+            var treeHash=vm.treeHash,
+                treeData=vm.treeData,
+                _selectedNode=vm._selectedNode;
+
+            treeHash["root"]=vm.treeData;
+
+            treeid=0;
+            /*********************************基本方法*****************************************************/
+            function getNode(nodeId){
+                return treeHash[nodeId+""];
+            }
+
+
+            /********************************数据控制方法**************************************************/
+
+
+            vm.insert = function (nodeId, data, insertBefore) {
+                var node = treeHash[nodeId],
+                        parent = nodeId != "root" ? treeHash[node.$pId] : "root",
+                //若上一级是root，在treeData中插入，否则在children中插入
+                        pChildren = nodeId != "root" ? parent.children : treeData;
+                if (node) {
+                    var formatedData = formatTreeData(data, parent);
+                    for (var i = 0; i < pChildren.length; i++) {
+                        if (pChildren[i].$treeid + "" === nodeId + "") {
+                            var insertPosition = !!insertBefore ? i : i + 1;//如果当前i为0，则插入位置为0
+                            var newLength = pChildren._add(formatedData, insertPosition);
+                            _buildHash(pChildren.slice(insertPosition, insertPosition + formatedData.length))
+                            break;
+                        }
+                    }
+                }
+            }
+            vm.append = function (parentId, data) {
+                var parent = parentId != "root" ? treeHash[parentId + ""] : "root";
+                if (parent !== undefined) {
+                    //非root节点，挂在children下.root节点，直接挂在下面
+                    var children = parentId != "root" ? parent.children : treeData;
+                    var formatedData = formatTreeData(data, parent),
+                        newLength = children.push.apply(children, formatedData);
+                    _buildHash(children.slice(newLength - formatedData.length));//将新增的子树根节点VM加入hash
+                    parent.open = true;//???如果open和isParent交换位置则append时parent节点样式错误（没有展开：显示为+号）
+                    parent.isParent = true;
+                }
+                return parent;
+            }
+            vm.remove = function (nodeId) {
+                if (nodeId !== "root") {
+                    var node = treeHash[nodeId + ""],
+                            parent = treeHash[node.$pId],
+                            findinThisArray = nodeId === "root" ? treeData : parent.children;
+                    _removeHash(node);
+                    for (var i in findinThisArray) {
+                        if (findinThisArray[i].$treeid + "" === nodeId + "") {
+                            findinThisArray.removeAt(i);
+                            break;
+                        }
+                    }
+                    return node;
+                }
+                else {
+                    treeHash={};
+                    treeData.clear();
+                    return treeData;
+                }
+            };
+            vm.update=function(nodeId,content){
+                var node=treeHash[nodeId];
+                if(node && avalon.type(content)=="object")
+                    avalon.mix(node, content);
+            }
+
+            /*****************************选中相关方法***********************************************************/
+            function _toggleSelect(nodeId, valueForce) {
+                var node = treeHash[nodeId + ""];
+                if (node) {
+                    if (node.selected != valueForce) {//如果要toggle
+                        switch(valueForce){
+                            case false:
+                            case true:
+                                node.selected=valueForce;
+                                break;
+                            case undefined:
+                                node.selected=!node.selected;
+                                break;
+                        }
+                        node.selected === true ?//加入到selectedNodes中方便查询
+                                (_selectedNode.selected=false) || (_selectedNode=node) ://增加
+                                _selectedNode=null;//删除
+                    }
+                }
+            };
+            vm.select=function(nodeId){
+                _toggleSelect(nodeId,true);
+            }
+            vm.unselect=function(nodeId){
+                _toggleSelect(nodeId,false);
+            }
+            vm.toggle=function(nodeId){
+                _toggleSelect(nodeId)
+            }
+            vm.getSelected=function(){
+                return _selectedNode;
+            }
+            /********************************展开相关方法******************************************************/
+            function _toggleExpand(nodeId,valueForce){
+                var node=treeHash[nodeId+""];
+                if(node){
+                    node.open=valueForce!==undefined?!!valueForce:!node.open;
+                }
+            }
+            vm.expand=function(nodeId){
+                _toggleExpand(nodeId,true);
+            }
+            vm.collapse=function(nodeId){
+                _toggleExpand(nodeId,false);
+            }
+            vm.expandAll = function () {
+                for(var param in treeHash){
+                    if(param!="root")
+                        treeHash[param].open = true;
+                }
+            }
+            vm.collapseAll = function () {
+                for(var param in treeHash){
+                    if(param!="root")
+                        treeHash[param].open = false;
+                }
+            }
+            /**********************************鼠标相关函数*******************************************/
+            vm.liveClick =function($event){
+                var target=$event.target
+                //Select
+                if(target.parentNode.nodeName==="A"){//如果点击的是<a>
+                    var treeid=avalon(target.parentNode.parentNode).attr('treeid');//在<li>上
+                    _toggleSelect(treeid);
+                }
+                //Expand
+                else if(target.nodeName==="SPAN"&&target.parentNode.nodeName==="LI"){//如果点击的是<span>且上级为<li>
+                    var treeid=avalon(target.parentNode).attr('treeid');//在<li>上
+                    _toggleExpand(treeid);
+                }
+                //$event.stopPropagation();
+            }
+            vm.liveContextmenu =function($event){
+                var target=$event.target;
+                if(target.parentNode.nodeName==="A"){
+                    var treeid=avalon(target.parentNode.parentNode).attr('treeid');//在<li>上
+                    _toggleSelect(treeid,true);
+                    var x=$event.clientX,
+                            y=$event.clientY;
+                    $("#simpletreeMenu ul").css({left:x, top:y}).show();
+                }
+                $event.stopPropagation();
+                $event.preventDefault();
+            }
+            vm.contextMenuHandler=function($event,menuIndex){
+                if($event.target.nodeName==="A"){
+                    var handle = vm.contextMenu[menuIndex].handle || avalon.noop;
+                    handle.call(this, _selectedNode ,$event);
+                    $("#simpletreeMenu ul").hide();
+                }
+                $event.stopPropagation();
+                $event.preventDefault();
+            }
+
+            /**********************************内部工具函数*******************************************/
+            /**
+             * 关键函数，由传入的简单数据数组生成tree内部的复杂数组，并映射成hash表用于搜索
+             * @param treeData
+             * @param parent
+             * @private
+             */
+            function formatTreeData(treeData, parent) {
+                treeData=treeData instanceof Array ? treeData : [treeData];
+                treeData.forEach(function (one) {
+                    formatItemData(one, parent);
+                    if (one.children && one.children.length)
+                        formatTreeData(one.children, one);
+                })
+                return treeData;
+            }
+            /**
+             * 关键函数，补全item字段
+             * @param itemData
+             * @param parent
+             * @private
+             */
+            function formatItemData(itemData, parent) {
+                itemData.$treeid = treeid++;
+                itemData.$pId = parent != "root" ? parent.$treeid : parent;
+                itemData.selected = false;
+                itemData.isRoot = parent != "root" ? false : true;
+                //必须保证每个item都有children，因为不能在vm外动态添加属性了,要先添加好！！
+                itemData.children = itemData.children || [];
+                //用户输入纠错
+                itemData.isParent = parent!="root"
+                        ?itemData.isParent || !!(itemData.children && itemData.children.length)
+                        :true;
+                itemData.open = itemData.isParent ? (itemData.open || vm.$opts.expandAllAtFirst) : false;//父节点才能打开
+                return itemData;
+            }
+            /**
+             * 关键函数，hash所有itemVM方便查找
+             * @param treeDataVM
+             * @private
+             */
+            function _buildHash(treeDataVM){
+                treeDataVM.forEach(function(one){
+                    treeHash[one.$model.$treeid]=one;
+                    if(one.$model.children && one.$model.children.length)
+                        _buildHash(one.children)
+                })
+            }
+
+            function _removeHash(nodeVM){
+                nodeVM.children.forEach(function(item){
+                    delete treeHash[item.$treeid];
+                    if(item.children.length)
+                        _removeHash(item.children);
+                })
+                delete treeHash[nodeVM.$treeid];
+            }
+
+            avalon.mix(vm,{//XXX:构建VM时函数会执行两次，所以只有普通属性可以mix，监控属性不能mix，否则会丧失VM特性
+                formatTreeData:formatTreeData,
+                formatItemData:formatItemData,
+                buildHash:_buildHash
+            })
+
+        })
+        //初始化数据
+        tree.append("root",data);
+        //tree.treeData.push.apply(tree.treeData,tree.formatTreeData(data,"root"))
+        //tree.buildHash(tree.treeData)
+
+
+        $(".simpletree").click(function(e){
+            var $nodeI=$(e.target),
+                    $nodeUL=$(e.target).siblings("ul");
+            //鼠标左键单击
+            if(e.which==1&&e.target.nodeName=="I"&&!$nodeI.hasClass("icon-th")){
+                if($nodeUL.hasClass("hide")){
+                    $nodeI.removeClass("icon-plus")
+                    $nodeI.addClass("icon-minus")
+                }
+                else{
+                    $nodeI.removeClass("icon-minus")
+                    $nodeI.addClass("icon-plus")
+                }
+                $nodeUL.toggleClass("hide");
+            }
+
+        })
+
+
+/*
+        $(".simpletree").contextMenu('simpletreeMenu',{
+            bindings:{
+                'menu-new':function(t){
+                    this
+                },
+                'menu-modify':function(t){
+                    t
+                },
+                'menu-delete':function(t){
+                    t
+                }
+            }
+        })
+*/
+        $(function(){
+            avalon.scan()
+        })
+    });
+
+
+
+
+
+
+
+</script>
+</body>
+</html>
+<!--
+2014.11.3:warning:avalon无限递归的问题注意：
+            关键在于错误示例中：先ms-include再scan（处理ms-each），
+            由于include后会马上再次scanNode，所以这时上一个node的ms-each并没有执行，
+            临时vm：el没有生成，一直使用第一层的el，所以导致无限循环
+            解决方法在正确示例中，用div包裹ms-include，这样ms-each就会生成临时el后再去处理下层的ms-include。
+            最好还是使用ms-repeat避免这类错误（也可能是框架设计的问题！！！！）
+
+            错误：
+            <ul class="nav nav-list simpletree" ms-each="tree" ms-include="'simpletreetmpl111'">
+                <li ms-if="el.children" ms-each="el.children" ms-include="'simpletreetmpl111'"></li>
+            </ul>
+            <noscript id="simpletreetmpl111">
+                    <a href="#2">{{el.text}}</a>
+                    <ul class="nav nav-list" ms-if="el.children" ms-each="el.children" ms-include="'simpletreetmpl111'">
+                    </ul>
+            </noscript>
+            正确：
+            <ul class="nav nav-list simpletree" ms-each="tree">
+            <li ms-if="el.children"><div ms-include="'simpletreetmpl111'"></div></li>
+            </ul>
+            <noscript id="simpletreetmpl111">
+            <a href="#2">{{el.text}}</a>
+            <ul class="nav nav-list" ms-if="el.children" ms-each="el.children" >
+                <div ms-include="'simpletreetmpl111'"></div>
+            </ul>
+            </noscript>
+
+            /*获取当前鼠标右键按下后的位置，据此定义菜单显示的位置*/
+            var rightedge=vm.$container.clientWidth-e.clientX,
+                bottomedge=vm.$container.clientHeight-e.clientY;
+
+            /*如果从鼠标位置到容器右边的空间小于菜单的宽度，就定位菜单的左坐标（Left）为当前鼠标位置向左一个菜单宽度*/
+            if (rightedge < vm.$menu.offsetWidth)
+                vm.$menu.style.left = vm.$container.scrollLeft + e.clientX - vm.$menu.offsetWidth + "px";
+            else
+            /*否则，就定位菜单的左坐标为当前鼠标位置*/
+                vm.$menu.style.left = vm.$container.scrollLeft + e.clientX + "px";
+
+            /*如果从鼠标位置到容器下边的空间小于菜单的高度，就定位菜单的上坐标（Top）为当前鼠标位置向上一个菜单高度*/
+            if (bottomedge < vm.$menu.offsetHeight)
+                vm.$menu.style.top = vm.$container.scrollTop + e.clientY - vm.$menu.offsetHeight + "px";
+            else
+            /*否则，就定位菜单的上坐标为当前鼠标位置*/
+                vm.$menu.style.top = vm.$container.scrollTop + e.clientY + "px";
+
+            /*设置菜单可见*/
+            vm.$menu.style.visibility = "visible";
+            e.preventDefault();
+-->

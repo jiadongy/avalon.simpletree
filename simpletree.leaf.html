@@ -1,0 +1,20 @@
+<!-- +/-展开图标 -->
+<span class="button switch center_close"
+      ms-class="root_close      :el.isRoot"
+      ms-class-1="roots_open    :el.isRoot && el.open"
+      ms-class-2="center_open   :el.isParent && el.open"
+      ms-class-3="center_docu   :!el.isParent"></span>
+<!-- 文件夹图标 + 文字 -->
+<a ms-href="el.href" ms-class="curSelectedNode: el.selected">
+    <span class="button ico_close"
+          ms-class="ico_open    :el.isParent && el.open"
+          ms-class-1="ico_docu  :!el.isParent"></span>
+    <!-- open变化时只通知了下面的ms-class="hide:!el.open" ， isParent变化时通知了上面四个，绑定只看第一个变量？？ -->
+    <span>{{el.name}}</span>
+</a>
+
+<ul class="line" ms-if="el.children.length" ms-class="hide  :!el.open">
+    <li ms-repeat="el.children" ms-attr-treeid="el.$treeid">
+        {{loadLeafTemplate(el)|html}}
+    </li>
+</ul>

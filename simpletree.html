@@ -1,0 +1,21 @@
+
+<ul class="simpletree"
+    ms-click="liveClick($event)"
+    ms-on-contextmenu="liveContextmenu($event)">
+
+    <!-- Leaf节点 -->
+    <li ms-repeat="treeData" ms-attr-treeid="el.$treeid">
+        {{loadLeafTemplate(el)|html}}
+    </li>
+
+    <!-- 右键菜单 -->
+    <ul class="menu dropdown-menu">
+        <li ms-repeat="contextMenu"
+            ms-attr-menuIndex="$index"
+            ms-click="contextMenuHandler($event,$index)">
+            <a>{{el.name}}</a>
+        </li>
+    </ul>
+</ul>
+
+
