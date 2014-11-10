@@ -11,9 +11,14 @@
 
 
     <div ms-widget="simpletree,$,$simpletreeOpt">
+
+    </div>
+    <div ms-widget="simpletree,$,$simpletreeOpt">
+
     </div>
 <script>
     require(["./simpletree"],function(){
+
         avalon.define("test",function(vm){
             vm.$tree={
                 children:[
@@ -28,7 +33,6 @@
             }
             vm.$simpletreeOpt={
                 treeNodes:vm.$tree.children,
-
                 contextMenu:[{name:'New',handle:function(nodes,$event){
                     $event;
                 }},{name:'Delete',handle:function($event){

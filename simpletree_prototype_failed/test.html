@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" charset="utf-8" name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title></title>
+</head>
+<body>
+<script src="../js/avalon.js"></script>
+<link rel="stylesheet" href="../css/base/bootstrap.css">
+<script src="../js/globalConfig.js"></script>
+<link rel="stylesheet" href="simpletree.css">
+<ul class="simpletree" ms-controller="test">
+   <li><span
+         class="button switch center_close"
+         ms-class-1="center_open:isParent && open"
+         ms-class-2="center_docu:!isParent"></span></li>
+</ul>
+
+<script>
+    test=avalon.define("test",function(vm){
+        vm.isParent=false;
+        vm.open=false;
+    })
+</script>
+</body>
+</html>
