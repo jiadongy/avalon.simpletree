@@ -1,11 +1,11 @@
 avalon.simpletree
 =================
-
 a simple plugin of tree based on AvalonJs
-#Version
-* 2014.11.10 : v0.1
-    参考了zTree,easyui.tree,oniUI.tree,加入了tree的基本功能<br>
 
+#Version
+* 2014.11.10 : v0.1 参考了zTree,easyui.tree,oniUI.tree,加入了tree的基本功能<br>
+* 2014.11.12 : v0.11 加入DblClick响应、数个可配置项（formatter,callback...）,重构了代码结构
+    
 #Usage
 在网页中添加如下片段:<br>
 ```html
