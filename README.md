@@ -65,6 +65,7 @@ children|Array  |Children Node|
 
 #APIs
 类似easyui.tree的API
+
 | Name | Parameters | Description|
 |--------|--------|---------|
 | getNode|nodeId |获得Node Item |
@@ -73,34 +74,11 @@ children|Array  |Children Node|
 |remove | nodeId| 移除Node及其子Node|
 | update|nodeId, content|更新Node属性 |
 | select|nodeId |选中Node |
-| unselect| | |
-| | | |
-| | | |
-| | | |
-| | | |
->getNode(nodeId)<br>
->>获得Node Item
->insert(nodeId, data, insertBefore)<br>
->>在Node前面或者后面插入一组元素
->append(parentId, data)<br>
->>向Node下面插入一组元素，返回插入的元素
->remove(nodeId)<br>
->>移除Node及其子Node
->update(nodeId, content)<br>
->>更新Node属性
->select(nodeId)<br>
->>选中Node
->unselect(nodeId)<br>
->>取消选中Node
->toggle(nodeId)<br>
->>选中/取消选中Node
->getSelected()<br>
->>返回选中的Node
->expand(nodeId)<br>
->>展开Node
->collapse(nodeId)<br>
->>收起Node
->expandAll()<br>
->>展开所有Node
->collapseAll()<br>
->>收起所有Node
+| unselect|nodeId |取消选中Node |
+|toggle |nodeId | 选中/取消选中Node|
+|getSelected | |返回选中的Node |
+| expand| nodeId| 展开Node|
+|collapse | nodeId|收起Node |
+|expandAll | |展开所有Node |
+| collapseAll| | 收起所有Node|
+
