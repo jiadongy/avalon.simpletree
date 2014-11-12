@@ -6,39 +6,6 @@ a simple plugin of tree based on AvalonJs
 * 2014.11.10 : v0.1 参考了zTree,easyui.tree,oniUI.tree,加入了tree的基本功能<br>
 * 2014.11.12 : v0.11 加入DblClick响应、数个可配置项（formatter,callback...）,重构了代码结构
     
-#Usage
-在网页中添加如下片段:<br>
-```html
-<div ms-widget="simpletree,$,$simpletreeOpt"></div>
-<script>
-    require(["./simpletree"],function(){
-        avalon.define("test",function(vm){
-            vm.$tree={
-                children:[
-                    {name: 'Root Node',href:"#",
-                        children: [
-                            {name: 'Parent Node',href:"#",
-                              isParent : true,
-                                children: [
-                                    {name: 'Leaf Node',href:"#"}
-                                ]}
-                        ]}
-                ]
-            }
-            vm.$simpletreeOpt={
-                treeNodes:vm.$tree.children,//所有的tree节点，暂时只支持JSON格式
-
-                contextMenu:[{name:'New',handle:function(nodes,$event){//增加右键回调
-                   //函数内容
-                }},{name:'Delete',handle:function($event){
-                    //函数内容
-                }}]
-            }
-        })
-        avalon.scan();
-    })
-</script>
-```
 #Configs
 ##Item设置
 | Name | Type | Description|
@@ -82,3 +49,24 @@ children|Array  |Children Node|
 |expandAll | |展开所有Node |
 | collapseAll| | 收起所有Node|
 
+#Usage
+在网页中添加如下片段:<br>
+```html
+<div ms-widget="simpletree,$,$simpletreeOpt"></div>
+<script>
+    require(["./simpletree"],function(){
+        avalon.define("test",function(vm){
+            vm.$tree={children:[{name: 'Root Node',href:"#",children: 
+                            [{name: 'Parent Node',href:"#",isParent : true,children: 
+                                [{name: 'Leaf Node',href:"#"} ]}]}]}
+            vm.$simpletreeOpt={
+                treeNodes:vm.$tree.children,//所有的tree节点，暂时只支持JSON格式
+                contextMenu:[{name:'New',handle:function(nodes,$event){//增加右键回调
+                   //函数内容
+                }},{name:'Delete',handle:function($event){//增加右键回调
+                    //函数内容
+                }}]}})
+        avalon.scan();
+    })
+</script>
+```
