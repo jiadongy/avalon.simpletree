@@ -8,27 +8,27 @@ a simple plugin of tree based on AvalonJs
     
 #Configs
 ##Item设置
-| Name | Type | Description|
-|--------|--------|---------|
-|name*   |String  |Node Text|
-|href    |String |Node Href |
-|isParent    |Boolean |是否是父节点 |
-|children|Array  |Children Node| 
+| Name   | Type   | Description|
+|--------|--------|------------|
+|name*   |String  |节点文本|
+|href    |String  |节点链接 |
+|isParent|Boolean |是否是父节点 |
+|children|Array   |孩子节点| 
 
 ##Global设置
-| Name | Type | Description|
-|--------|--------|---------|
-| treeNodes | Array | 一个/多个树节点 |
-|contextMenu |Array |右键菜单 {name{String},handle(data){Function}|
-|formatter(node) | Function|格式化显示node的text/html |
-|callback.onClick(data) | Function|单击回调 |
-| callback.onDblClick(data)| Function| 双击回调|
-| callback.onCollapse(data)| Function| 收起回调|
-| callback.onExpand(data) |Function |展开回调|
-| callback.onSelect(data) | Function|选中回调|
-| callback.onUnselect(data)| Function|取消选中回调 |
-| callback.onContextmenu(data)|Function | 右键回调|
-| onInit| Function| 组件初始化回调|
+| Name                                  | Type      | Description|
+|---------------------------------------|-----------|----------------|
+| treeNodes                             | Array     | 一个/多个树节点 |
+|contextMenu                            |Array      |右键菜单项<br>{ name : {String} ,<br>handle(data) : {Function}}|
+|formatter(node)                        | Function  |格式化显示node的text/html |
+|callback.onClick(data)                 | Function  |单击回调 |
+| callback.onDblClick(data)             | Function  | 双击回调|
+| callback.onCollapse(data)             | Function  | 收起回调|
+| callback.onExpand(data)               |Function   |展开回调|
+| callback.onSelect(data)               | Function  |选中回调|
+| callback.onUnselect(data)             | Function  |取消选中回调 |
+| callback.onContextmenu(data)          |Function   | 右键回调|
+|onInit(vmodel, options, vmodels)       | Function  | 组件初始化回调|
 
 
 #APIs
@@ -44,21 +44,21 @@ a simple plugin of tree based on AvalonJs
 avalon.vmodels[组件实例名].api();
 ```
 
-| Name | Parameters | Description|
-|--------|--------|---------|
-| getNode|nodeId |获得Node Item |
-| insert|nodeId, data, insertBefore | 在Node前面或者后面插入一组元素|
-| append|parentId, data | 向Node下面插入一组元素，返回插入的元素|
-|remove | nodeId| 移除Node及其子Node|
-| update|nodeId, content|更新Node属性 |
-| select|nodeId |选中Node |
-| unselect|nodeId |取消选中Node |
-|toggle |nodeId | 选中/取消选中Node|
-|getSelected | |返回选中的Node |
-| expand| nodeId| 展开Node|
-|collapse | nodeId|收起Node |
-|expandAll | |展开所有Node |
-| collapseAll| | 收起所有Node|
+| Name      | Parameters                | Return    |  Description          |
+|-----------|---------------------------|-----------|-----------------------|
+| getNode   |nodeId                     |  nodeVM   |获得Node Item          |
+| insert    |nodeId, data, insertBefore | [nodeVM]  |在Node前面或者后面插入一组元素|
+| append    |parentId, data             | [nodeVM]  |向Node下面插入一组元素，返回插入的元素|
+|remove     | nodeId                    | nodeVM    |移除Node及其子Node|
+| update    |nodeId, content            | none      |更新Node属性 |
+| select    |nodeId                     | none      |选中Node |
+| unselect  |nodeId                     | none      |取消选中Node |
+|toggle     |nodeId                     |  none     |选中/取消选中Node|
+|getSelected|                           |nodeVM/null|返回选中的Node |
+| expand    | nodeId                    | none      |展开Node|
+|collapse   | nodeId                    | none      |收起Node |
+|expandAll  |                           | none      |展开所有Node |
+|collapseAll|                           |  none     |收起所有Node|
 
 #Usage
 在网页中添加如下片段:<br>
