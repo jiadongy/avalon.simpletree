@@ -10,9 +10,10 @@ a simple plugin of tree based on AvalonJs
 ##Item设置
 | Name | Type | Description|
 |--------|--------|---------|
-name   |String  |Node Text|
-href    |String |Node Href |
-children|Array  |Children Node| 
+|name*   |String  |Node Text|
+|href    |String |Node Href |
+|isParent    |Boolean |是否是父节点 |
+|children|Array  |Children Node| 
 
 ##Global设置
 | Name | Type | Description|
@@ -31,7 +32,17 @@ children|Array  |Children Node|
 
 
 #APIs
-类似easyui.tree的API
+* 类似easyui.tree的API
+
+##如何使用API
+
+```html
+<div ms-widget="simpletree,<组件实例名：可为任意名，$为随机名>,<组件实例的配置项名：为Model的变量名>"></div>
+```
+
+```javascript
+avalon.vmodels[组件实例名].api();
+```
 
 | Name | Parameters | Description|
 |--------|--------|---------|
