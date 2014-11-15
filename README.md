@@ -37,7 +37,7 @@ a simple plugin of tree based on AvalonJs
 ##如何使用API
 
 ```html
-<div ms-widget="simpletree,<组件实例名：可为任意名，$为随机名>,<组件实例的配置项名：为Model的变量名>"></div>
+<div ms-widget="simpletree,<组件实例名：可为任意名，$为随机名>,<组件实例的配置项名：为Model中的某个变量名>"></div>
 ```
 
 ```javascript
