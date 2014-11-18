@@ -16,19 +16,65 @@
     require(["./simpletree"],function(){
         avalon.define("test",function(vm){
             vm.$tree={
-                children:[
-                    {name: 'C818',href:"#",
-                        children: [
-                            {name: '雷达调试',href:"#",
-                                children: [
-                                    {name: '相控阵选型',href:"#"}
+                normalData:[
+                    {name1: 'C818',href1:"#",
+                        children1: [
+                            {name1: '雷达调试',href1:"#",
+                                children1: [
+                                    {name1: '相控阵选型',href1:"#"}
                                 ]}
                         ]}
+                ],
+                simpleData:[
+                    { id:1, pid:0, name:"父节点1 - 展开", open:true},
+                    { id:11, pid:1, name:"父节点11 - 折叠"},
+                    { id:111, pid:11, name:"叶子节点111"},
+                    { id:112, pid:11, name:"叶子节点112"},
+                    { id:113, pid:11, name:"叶子节点113"},
+                    { id:114, pid:11, name:"叶子节点114"},
+                    { id:12, pid:1, name:"父节点12 - 折叠"},
+                    { id:121, pid:12, name:"叶子节点121"},
+                    { id:122, pid:12, name:"叶子节点122"},
+                    { id:123, pid:12, name:"叶子节点123"},
+                    { id:124, pid:12, name:"叶子节点124"},
+                    { id:13, pid:1, name:"父节点13 - 没有子节点", isParent:true},
+                    { id:2, pid:0, name:"父节点2 - 折叠"},
+                    { id:21, pid:2, name:"父节点21 - 展开", open:true},
+                    { id:211, pid:21, name:"叶子节点211"},
+                    { id:212, pid:21, name:"叶子节点212"},
+                    { id:213, pid:21, name:"叶子节点213"},
+                    { id:214, pid:21, name:"叶子节点214"},
+                    { id:22, pid:2, name:"父节点22 - 折叠"},
+                    { id:221, pid:22, name:"叶子节点221"},
+                    { id:222, pid:22, name:"叶子节点222"},
+                    { id:223, pid:22, name:"叶子节点223"},
+                    { id:224, pid:22, name:"叶子节点224"},
+                    { id:23, pid:2, name:"父节点23 - 折叠"},
+                    { id:231, pid:23, name:"叶子节点231"},
+                    { id:232, pid:23, name:"叶子节点232"},
+                    { id:233, pid:23, name:"叶子节点233"},
+                    { id:234, pid:23, name:"叶子节点234"},
+                    { id:3, pid:0, name:"父节点3 - 没有子节点", isParent:true}
                 ]
-            }
+        }
             vm.$simpletreeOpt={
-                treeNodes:vm.$tree.children,
-
+                treeNodes:vm.$tree.normalData,
+                data: {
+                    simpleData: {
+                        idKey: "id",
+                        pIdKey: "pid",
+                        enable: false
+                    },
+                    key: {
+                        children: "children1",
+                        name: "name1",
+                        title: "",
+                        url: "href1"
+                    }
+                },
+                callback:{
+                  onClick:function(data){avalon.log(data)}
+                },
                 contextMenu:[{name:'New',handle:function(nodes,$event){
                     $event;
                 }},{name:'Delete',handle:function($event){

@@ -8,8 +8,11 @@ define(['avalon', 'text!./simpletree.html', 'text!./simpletree.leaf.html', 'css!
         extentionMethods = {};
     var widget = avalon.ui.simpletree = function (element, data, vmodels) {
         var options = data["simpletree" + "Options"];
+        mixUserWidgetSetting(options,widget.defaults);
         options.tmpl = options.getTemplate(treeTmpl, options)
         options.leafTmpl = leafTmpl;
+        var keys=options.data.key,childrenKey=keys.children,nameKey=keys.name,urlKey=keys.url;
+
         var vmodel = avalon.define(data["simpletreeId"], function (vm) {
             /***************************插入Extention方法*************************************************/
             avalon.each(extentionMethods,function(key,func){
@@ -41,7 +44,10 @@ define(['avalon', 'text!./simpletree.html', 'text!./simpletree.leaf.html', 'css!
                         avalon.css(contextMenuElement, "display", "none");
                 })
                 //添加数据
-                vm.append("root", options.treeNodes);
+                var dataForInit=options.data.simpleData.enable
+                            ?formatSimpleTreeData(options.treeNodes)
+                            :options.treeNodes;
+                vm.append("root", dataForInit);
                 vm.contextMenu = options.contextMenu;
                 avalon.scan(element, [vmodel].concat(vmodels));
                 //onInit回调
@@ -58,7 +64,7 @@ define(['avalon', 'text!./simpletree.html', 'text!./simpletree.leaf.html', 'css!
             vm.loadLeafTemplate = function (leaf) {
                 return options.leafTmpl;
             }
-            vm.formatNodeName = options.formatter;
+            vm.formatNodeName = options.view.nameShower;
             /********************************数据控制方法**************************************************/
             function getNode(nodeId) {
                 return treeHash[nodeId + ""];
@@ -102,8 +108,10 @@ define(['avalon', 'text!./simpletree.html', 'text!./simpletree.leaf.html', 'css!
                         newLength = children.push.apply(children, formatedData),
                         newElement = children.slice(newLength - formatedData.length);
                     _buildHash(newElement);//将新增的子树根节点VM加入hash
-                    parent.open = true;//???如果open和isParent交换位置则append时parent节点样式错误（没有展开：显示为+号）
-                    parent.isParent = true;
+					if(parent !== "root"){
+						parent.open = true;//???如果open和isParent交换位置则append时parent节点样式错误（没有展开：显示为+号）
+						parent.isParent = true;
+					}
                 }
                 return newElement;
             }
@@ -300,10 +308,34 @@ define(['avalon', 'text!./simpletree.html', 'text!./simpletree.leaf.html', 'css!
             }
             /**********************************内部工具函数************************************/
             /**
-             * 关键函数，由传入的简单数据数组生成tree内部的复杂数组，并映射成hash表用于搜索
+             * 把simpleDataArray构造成树形结构，用{id:xxx,pid:xxx}标记父子关系
+             * @param treeData
+             * @returns {Array}
+             */
+            function formatSimpleTreeData(treeData){
+                if(avalon.type(treeData) != 'array') return [];
+                var dict = options.data.simpleData, idKey = dict.idKey, pIdKey = dict.pIdKey,
+                    hash={},parentItem,result=[];
+                treeData.forEach(function(one){//预处理
+                    one.children=[];
+                    hash[one[idKey]]={isRootItem:true,item:one}
+                })
+                avalon.each(hash, function(id,one){
+                    if(parentItem=hash[one.item[pIdKey]]){
+                        parentItem.item.children.push(one.item);
+                        one.isRootItem=false;
+                    }
+                })
+                avalon.each(hash, function(id,one){
+                    one.isRootItem && result.push(one.item);
+                })
+                return result;
+            }
+            /**
+             * 关键函数，由传入的简单JSON数据数组生成tree内部的复杂数组，并映射成hash表用于搜索
              * @param treeData
              * @param parent
-             * @private
+             * @returns {*}
              */
             function formatTreeData(treeData, parent) {
                 treeData = treeData instanceof Array ? treeData : [treeData];
@@ -318,21 +350,26 @@ define(['avalon', 'text!./simpletree.html', 'text!./simpletree.leaf.html', 'css!
              * 关键函数，补全item字段
              * @param itemData
              * @param parent
-             * @private
+             * @returns {*}
              */
             function formatItemData(itemData, parent) {
+                //先删除再添加
+                var children = itemData[childrenKey], name = itemData[nameKey], url = itemData[urlKey];
+                delete itemData[childrenKey] ; delete itemData[nameKey] ; delete itemData[urlKey];
+                //添加内部属性
                 itemData.$treeid = treeid++;
                 itemData.$pId = parent != "root" ? parent.$treeid : parent;
                 itemData.selected = false;
                 itemData.isRoot = parent == "root";
                 //必须保证每个item都有children，因为不能在vm外动态添加属性了,要先添加好！！
-                itemData.children = itemData.children || [];
+                itemData.children = children || [];
                 //用户输入纠错
+                itemData.name = name
+                itemData.href = url || "javascript:void(0)";
                 itemData.isParent = parent != "root"
                     ? itemData.isParent || (itemData.children && itemData.children.length)
                     : true;
-                itemData.open = itemData.isParent ? (itemData.open || true) : false;//父节点才能打开
-                itemData.href = itemData.href || "javascript:void(0)";
+                itemData.open = itemData.open || true;
                 return itemData;
             }
             /**
@@ -362,11 +399,11 @@ define(['avalon', 'text!./simpletree.html', 'text!./simpletree.leaf.html', 'css!
             }
         });
         /*****************************事件监听*******************************************/
-        eventList.forEach(function(one){
-            var eventName = "on"+upperFirstLetter(one);
-            vmodel.$watch("e:"+one,function(){
-                avalon.log("Fire Event : "+eventName);
-                options.callback[eventName].call(null,arguments);
+        eventList.forEach(function (one) {
+            var eventName = "on" + upperFirstLetter(one);
+            vmodel.$watch("e:" + one, function () {
+                avalon.log("Fire Event : " + eventName);
+                (options.callback[eventName] || avalon.noop).call(null, arguments);
             })
         })
         return vmodel;
@@ -374,7 +411,6 @@ define(['avalon', 'text!./simpletree.html', 'text!./simpletree.leaf.html', 'css!
     widget.defaults = {
         treeNodes: [],//@param 树的所有节点，支持JSON格式
         contextMenu: [],
-        formatter:function(node){return node.name},//@param 格式化显示node的text/html
         view: {//@param 视觉效果相关的配置
             showLine: true,//@param view.showLine是否显示连接线
             dblClickExpand: true,//@param view.dblClickExpand是否双击变化展开状态
@@ -384,6 +420,19 @@ define(['avalon', 'text!./simpletree.html', 'text!./simpletree.leaf.html', 'css!
             nameShower: function (leaf) {
                 return leaf.name
             }//@optMethod view.nameShower(leaf)节点显示内容过滤器，默认是显示leaf.name
+        },
+        data: {//@param 设置使用Simple格式还是Normal格式，并自定义其字段名
+            simpleData: {
+                idKey: "id",
+                pIdKey: "pId",
+                enable: false
+            },
+            key: {
+                children: "children",
+                name: "name",
+                title: "",
+                url: "href"
+            }
         },
         callback: {//@param 回调相关的配置
             onClick:avalon.noop,//@optMethod callback.onClick(data) 节点被点击回调
@@ -403,6 +452,20 @@ define(['avalon', 'text!./simpletree.html', 'text!./simpletree.leaf.html', 'css!
             avalon.mix(true, widget.defaults, ExtentionDefaults || {});
             eventList = eventList.concat(ExtentionWatchingEvent || [])
         }
+    }
+    /**
+     * 递归合并用户和默认的设置，原来avalon widget会直接覆盖setting中的object，用户必须设置二级object的所有属性，不方便
+     * @param userSetting
+     * @param defaultSetting
+     */
+    function mixUserWidgetSetting(userSetting, defaultSetting) {
+        avalon.each(defaultSetting, function (key, value) {
+            if (avalon.type(value) === 'object') {
+                userSetting.hasOwnProperty(key) || (userSetting[key] = {});
+                mixUserWidgetSetting(userSetting[key], value);
+            } else
+                userSetting.hasOwnProperty(key) || (userSetting[key] = value);
+        })
     }
     function upperFirstLetter(str) {
         return str.replace(/^[a-z]{1}/g, function(mat) {
