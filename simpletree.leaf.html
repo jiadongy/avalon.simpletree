@@ -9,8 +9,8 @@
     <span class="button ico_close"
           ms-class="ico_open    :el.isParent && el.open"
           ms-class-1="ico_docu  :!el.isParent"></span>
-    <!-- open变化时只通知了下面的ms-class="hide:!el.open" ， isParent变化时通知了上面四个，绑定只看第一个变量？？ -->
-    <span>{{el.name}}</span>
+    
+    <span>{{el.name | html}}</span>
 </a>
 
 <ul class="line" ms-if="el.children.length" ms-class="hide  :!el.open">
