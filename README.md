@@ -50,12 +50,20 @@ a simple plugin of tree based on AvalonJs
 * 传入的是一个Object，有下列属性
 
 |Attribute Name	|Type			|Description|
-|---				-|----			|-------------|
+|---------------|---------------|------------|
 |event*		|DOM Event			|触发的事件|
 |node		|nodeObject			|回调相关的节点，若点击在空白处则无此项|
 |vmodel*	|VM Object			|此实例的vmodel|
 |vmodels*	|Array of VM Object|此实例的作用域vmodel数组|
 
+###NodeObject Private Attributes
+* Node保存的一些内部变量，用户可以读取使用，最好不要修改
+
+|Attribute Name	|Type			|Description|
+|---------------|---------------|------------|
+|$treeid		|Number			|递增的节点id|
+|$pId		    |Number			|递增的节点id，根节点为`"root"`|
+|select		    |Boolean		|节点是否选中|
 
 #APIs
 * 类似easyui.tree的API
