@@ -28,13 +28,13 @@ a simple plugin of tree based on AvalonJs
 |...nameShower|Function|格式化节点的Name(Html格式）|`返回节点的name`|
 |**data**|Object		|数据配置项||
 |...*simpleData*|Object|Simple数据配置项||
-|........idKey|Object		|id|`'id'`|
-|........pIdKey	|Object		|parent Id|`'pId'`|
-|........enable	|Object		|enable/disable SimpleData|`false`|
+|........idKey|String		|id|`'id'`|
+|........pIdKey	|String		|parent Id|`'pId'`|
+|........enable	|String		|enable/disable SimpleData|`false`|
 |...*key*|Object		|Normal数据配置项||
-|........children|Object		|children|`children`|
-|........name	|Object		|name|`name`|	
-|........url	|Object		|href|`href`|
+|........children|String		|children|`children`|
+|........name	|String		|name|`name`|	
+|........url	|String		|href|`href`|
 |**callback**|Object		|回调函数配置项||
 |...onClick(data) | Function  |单击回调 |`Noop`|
 |...onClick(data) | Function  |单击回调 |`Noop`|
