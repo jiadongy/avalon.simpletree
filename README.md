@@ -113,9 +113,9 @@ avalon.vmodels[组件实例名].api(arguments...);
                                 [{name: 'Leaf Node',href:"#"} ]}]}]}
             vm.$simpletreeOpt={
                 treeNodes:vm.$tree.children,//所有的tree节点，暂时只支持JSON格式
-                contextMenu:[{name:'New',handle:function(nodes,$event){//增加右键回调
+                contextMenu:[{name:'New',handle:function(data){//增加右键回调
                    //函数内容
-                }},{name:'Delete',handle:function($event){//增加右键回调
+                }},{name:'Delete',handle:function(data){//增加右键回调
                     //函数内容
                 }}]}})
         avalon.scan();
