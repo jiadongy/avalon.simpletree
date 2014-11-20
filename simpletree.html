@@ -1,23 +1,24 @@
+<div class="simpletree"
+     ms-click="eventExecuter('click',$event)">
+    <ul ms-dblclick="eventExecuter('dblClick',$event)"
+        ms-on-contextmenu="eventExecuter('contextmenu',$event)"
+        ms-on-focusout="eventExecuter('focusout',$event)"
+        ms-on-focusin="eventExecuter('focusin',$event)">
 
-<ul class="simpletree"
-    ms-click="liveClick($event)"
-    ms-dblclick="liveDblClick($event)"
-    ms-on-contextmenu="liveContextmenu($event)">
-
-    <!-- Leaf节点 -->
-    <li ms-repeat="treeData" ms-attr-treeid="el.$treeid">
-        {{loadLeafTemplate(el)|html}}
-    </li>
-
-    <!-- 右键菜单 -->
-    <ul class="menu dropdown-menu">
-        <li ms-if="contextMenu.length"
-            ms-repeat="contextMenu"
-            ms-attr-menuIndex="$index"
-            ms-click="contextMenuHandler($event,$index)">
-            <a>{{formatNodeName(el) | html}}</a>
+        <!-- Leaf节点 -->
+        <li ms-repeat="treeData" ms-attr-treeid="el.$treeid" ms-attr-id="el.$id">
+            {{loadLeafTemplate(el)|html}}
         </li>
     </ul>
-</ul>
+    <!-- 右键菜单 -->
+    <ul class="menu dropdown-menu" style="float:left;display: none;">
+        <li ms-if="contextMenu.length"
+            ms-repeat="contextMenu"
+            ms-attr-menuIndex="$index">
+            <a>{{el.name}}</a>
+        </li>
+    </ul>
+</div>
+
 
 
