@@ -156,7 +156,7 @@ define(['avalon', 'text!./simpletree.html', 'text!./simpletree.leaf.html', 'css!
              * @param [valueForce] 强制设置选中状态，否则默认行为为toggle
              * @private
              */
-            function _toggleSelect(nodeId, valueForce, $event) {
+            function _toggleSelect(nodeId, valueForce) {
                 var node = treeHash[nodeId + ""];
                 if (node) {
                     if (node.selected != valueForce) {//如果要toggle
@@ -172,15 +172,6 @@ define(['avalon', 'text!./simpletree.html', 'text!./simpletree.leaf.html', 'css!
                         node.selected === true ?//加入到selectedNodes中方便查询
                             ((selectedNode) && (selectedNode.selected = false)) || (selectedNode = node) ://增加
                             selectedNode = null;//删除
-                    }
-                    if($event){
-                        var behavior = node.selected ? "select":"unselect";
-                        vm.$fire("e:"+behavior,{
-                            event:$event,
-                            node:node,
-                            vmodel:vm,
-                            vmodels:vmodels
-                        });
                     }
                 }
             };
@@ -238,74 +229,263 @@ define(['avalon', 'text!./simpletree.html', 'text!./simpletree.leaf.html', 'css!
             vm.setContextMenu = function (menuData){
                 menuData instanceof Array && (vm.contextMenu = menuData);
             }
-            /*****************************鼠标左右键相关方法*************************************/
-            vm.liveClick = function ($event) {
-                clearTimeout(clickTimer);
-                //用300ms定时器设置click和dblclick事件不冲突
-                clickTimer = setTimeout(function(){
-                    var target = $event.target,
-                        args = { event: $event,vmodel: vm,vmodels: vmodels },
-                        nodeId = 0;
-                    if(target.parentNode.nodeName === "A"){//如果点击的node text
-                        nodeId = avalon(target.parentNode.parentNode).attr('treeid');//在<li>上
-                        _toggleSelect(nodeId,null,$event);
-                        args.node = getNode(nodeId);
-                    }else if (target.nodeName === "SPAN" && target.parentNode.nodeName === "LI") {//如果点击的是+/-
-                        nodeId = avalon(target.parentNode).attr('treeid');//在<li>上
-                        _toggleExpand(nodeId,null,$event);
-                        return;//不触发click事件
+            /**********************************编辑相关方法***********************************/
+            vm.beginEdit=function(nodeId){
+                if(options.edit.enable){
+                    var node=getNode(nodeId),
+                        $id=node.$id,
+                        nodeElement=document.getElementById($id),
+                        nodeChildrenElement=document.getElementById('children_'+$id),
+                        nodeInputElement=document.getElementById('input_'+$id);
+
+                    vm.eventExecuter("click",{eventName:"select",args:{node:node}});
+                    avalon(nodeElement).addClass("edit-focus")
+                    avalon(nodeChildrenElement).addClass("par-edit-focus")
+                    options.edit.editNameSelectAll&&nodeInputElement.select()
+                    nodeInputElement.focus()
+                }
+            }
+            vm.endEdit=function(nodeId){
+                var node=getNode(nodeId),
+                    $id=node.$id,
+                    nodeElement=document.getElementById($id),
+                    nodeChildrenElement=document.getElementById('children_'+$id),
+                    nodeInputElement=document.getElementById('input_'+$id);
+
+                node.name = nodeInputElement.value;
+                avalon(nodeElement).removeClass("edit-focus")
+                avalon(nodeChildrenElement).removeClass("par-edit-focus")
+            }
+            vm.cancelEdit=function(nodeId){
+                var node=getNode(nodeId),
+                    $id=node.$id,
+                    nodeElement=document.getElementById($id),
+                    nodeChildrenElement=document.getElementById('children_'+$id),
+                    nodeInputElement=document.getElementById('input_'+$id);
+                nodeInputElement.value = node.name;
+                avalon(nodeElement).removeClass("edit-focus")
+                avalon(nodeChildrenElement).removeClass("par-edit-focus")
+            }
+            /**********************************事件分发器*************************************/
+            /**
+             * 事件分发器的规则
+             * 根据委托的事件名，遍历挂在此事件下的触发动作，若某项过滤器返回args则执行定义的动作，过滤器在args中可以添加自定义属性
+             *      并触发用户自定义事件（on，before，after）
+             * @type {{click: {priority: number, eventName: string, fliter: function, operation: function}[]}}
+             */
+            var eventDispatchers = {
+                click: [
+                    //select/unselect
+                    {
+                        priority: 1,
+                        eventName: "select",
+                        stopNow: false,
+                        /**
+                         * 根据传入的参数对象，返回增强的参数对象（执行下一步），或者undefined（跳过）
+                         * @param args{{event:object,vmodel:object,vmdels:object}}
+                         * @returns {*}
+                         */
+                        fliter: function (args) {
+                            var target = args.event.target, nodeId;
+                            if (target.parentNode.nodeName === "A") {//如果点击的node text
+                                nodeId = avalon(target.parentNode.parentNode).attr('treeid');//在<li>上
+                                args.node = getNode(nodeId);
+                                return args
+                            }
+                        },
+                        /**
+                         * 是否触发反向事件，如unselect
+                         * @param args{{event:object,vmodel:object,vmdels:object}}
+                         * @returns {*}
+                         */
+                        fireReverse: function (args) {
+                            return args.node.selected
+                        },
+                        /**
+                         * 要执行的操作(为VM中的函数)
+                         * @param args{{event:object,vmodel:object,vmdels:object}}
+                         */
+                        operation: function (args) {
+                            _toggleSelect(args.node.$treeid);
+                        }
+                    },
+                    //expand/collapse
+                    {
+                        priority: 2,
+                        eventName: "expand",
+                        reverseName: "collapse",
+                        stopNow: false,
+                        fliter: function (args) {
+                            var target = args.event.target, nodeId;
+                            if (target.nodeName === "SPAN" && target.parentNode.nodeName === "LI") {//如果点击的是+/-
+                                nodeId = avalon(target.parentNode).attr('treeid');//在<li>上
+                                args.node = getNode(nodeId);
+                                return args;//不触发click事件
+                            }
+                        },
+                        fireReverse: function (args) {
+                            return args.node.open
+                        },
+                        operation: function (args) {
+                            _toggleExpand(args.node.$treeid);
+                        }
+                    },
+                    //clickMenuItem
+                    {
+                        priority: 3,
+                        eventName: "clickMenuItem",
+                        stopNow: true,
+                        fliter: function (args) {
+                            var target = args.event.target;
+                            if(avalon(target.parentNode.parentNode).hasClass("menu")){
+                                args.node = vm.getSelected();
+                                args.menuIndex = avalon(target.parentNode).attr("menuIndex");
+                                return args;
+                            }
+                        },
+                        fireReverse: avalon.noop,
+                        operation: function (args) {
+                            var handle = vm.contextMenu[args.menuIndex].handle || avalon.noop;
+                            handle.call(this, args);
+                            avalon.css(contextMenuElement, "display", "none");
+                            args.event.preventDefault();
+                        }
+                    },
+                    //click
+                    {
+                        priority: 100,
+                        eventName: "click",
+                        stopNow: true,
+                        fliter: function (args) {
+                            var target=args.event.target;
+                            if(avalon(target).hasClass("AreaText")||avalon(target).hasClass("AreaIcon")){
+                                var nodeId=avalon(target.parentNode.parentNode).attr("treeid");
+                                args.node = getNode(nodeId);
+                                return args;
+                            }
+                        },
+                        fireReverse: avalon.noop,
+                        operation: avalon.noop
+                    },
+                ],
+                dblClick:[
+                    {
+                        priority: 100,
+                        eventName: "dblClick",
+                        stopNow: true,
+                        fliter: function (args) {
+                            return args
+                        },
+                        fireReverse: avalon.noop,
+                        operation: avalon.noop
                     }
-                    vm.$fire("e:click",args);
-                    $event.stopPropagation();
-                },300);
+                ],
+                contextmenu:[
+                    {
+                        priority: 100,
+                        eventName: "contextmenu",
+                        stopNow: true,
+                        fliter: function (args) {
+                            var target = args.event.target;
+                            if (target.parentNode.nodeName === "A") {
+                                var treeid = avalon(target.parentNode.parentNode).attr('treeid');//在<li>上
+                                args.node = getNode(treeid);
+                                return args;
+                            }
+                        },
+                        fireReverse: avalon.noop,
+                        operation: function(args){
+                            vm.eventExecuter("click",{eventName:"select",args:{node:args.node}});
+                            var x = args.event.clientX,
+                                y = args.event.clientY;
+                            avalon.css(contextMenuElement, "left", x);
+                            avalon.css(contextMenuElement, "top", y);
+                            avalon.css(contextMenuElement, "display", "block");
+                            args.event.preventDefault();
+                        }
+                    }
+                ],
+                focusout:[
+                    {
+                        priority: 1,
+                        eventName: "rename",
+                        stopNow: false,
+                        fliter: function (args) {
+                            var target = args.event.target;
+                            if (target.nodeName==="INPUT"&&avalon(target).hasClass("rename")) {
+                                var treeid = avalon(target.parentNode.parentNode.parentNode).attr('treeid');//在<li>上
+                                args.node = getNode(treeid);
+                                return args;
+                            }
+                        },
+                        fireReverse: avalon.noop,
+                        operation: function(args){
+                            vm.endEdit(args.node.$treeid);
+                        }
+                    }
+                ]
             }
-            vm.liveDblClick = function($event){
-                clearTimeout(clickTimer);
-                var target = $event.target,
-                    args = { event: $event,vmodel: vm,vmodels: vmodels },
-                    nodeId = 0;
-                if (target.parentNode.nodeName === "A") {//如果点击的node text
-                    nodeId = avalon(target.parentNode.parentNode).attr('treeid');//在<li>上
-                    var node = getNode(nodeId);
-                    node.isParent && _toggleExpand(nodeId,null,$event);
-                    args.node = node;
+            /**
+             * 事件分发器
+             * @param cmd ，委托的事件名
+             * @param $event ，事件对象(事件触发),或者配置对象(手动触发){event,args}
+             * @param focusDirection{boolean} ,强制触发正向/反向事件
+             */
+            vm.eventExecuter = function (cmd, $event, focusDirection) {
+                var useFocus = avalon.isPlainObject($event),
+                    args = {event: $event, vmodel: vm, vmodels: vmodels},
+                    dispatchers = eventDispatchers[cmd] || [],
+                    that = this;
+                if (useFocus) {//强制触发的流程
+                    execute()
                 }
-                vm.$fire("e:dblClick",args);
-            }
-            vm.liveContextmenu = function ($event) {
-                var target = $event.target;
-                if (target.parentNode.nodeName === "A") {
-                    var treeid = avalon(target.parentNode.parentNode).attr('treeid');//在<li>上
-                    _toggleSelect(treeid, true);
-                    var x = $event.clientX,
-                        y = $event.clientY;
-                    avalon.css(contextMenuElement, "left", x);
-                    avalon.css(contextMenuElement, "top", y);
-                    avalon.css(contextMenuElement, "display", "block");
-                    vm.$fire("e:contextmenu",{
-                        event: $event,
-                        node: getNode(treeid),
-                        vmodel: vm,
-                        vmodels: vmodels,
-                    });
+                else {//正常触发的流程
+                    if (cmd === "click" || cmd === "dblClick") {//修复click和dblclick检测问题
+                        clearTimeout(clickTimer);
+                        cmd === "click"
+                            ? clickTimer = setTimeout(execute, 300)
+                            : execute();
+                    } else {
+                        execute()
+                    }
                 }
-                //$event.stopPropagation();
-                $event.preventDefault();
-            }
-            vm.contextMenuHandler = function ($event, menuIndex) {
-                if ($event.target.nodeName === "A") {
-                    var handle = vm.contextMenu[menuIndex].handle || avalon.noop;
-                    handle.call(this, {
-                        event:$event,
-                        selectedMenu:menuIndex,
-                        vmodel:vm,
-                        vmodels:vmodels
-                    });
-                    avalon.css(contextMenuElement, "display", "none");
+                function execute() {
+                    var focusMethodFound;
+                    for (var i = 0, one = dispatchers[0], length = dispatchers.length; i < length, one = dispatchers[i]; i++) {
+                        if (useFocus || one.fliter(args)) {
+                            if (useFocus) {
+                                if (one.eventName !== $event.eventName)
+                                    continue;
+                                else {
+                                    focusMethodFound = true;
+                                    avalon.mix(args, $event.args);
+                                }
+                            }
+
+                            var eventName = focusDirection || one.fireReverse(args) !== true
+                                    ? upperFirstLetter(one.eventName)
+                                    : upperFirstLetter(one.reverseName || "un" + one.eventName),
+                                beforeEventFunc = options.callback["before" + eventName],
+                                onEventFunc = options.callback["on" + eventName],
+                                afterEventFunc = options.callback["after" + eventName];
+
+                            avalon.type(beforeEventFunc) == "function"
+                            && avalon.log("execute:before" + eventName) && beforeEventFunc.call(that, args);
+
+                            one.operation.call(that, args);
+
+                            avalon.type(onEventFunc) == "function"
+                            && avalon.log("execute:on" + eventName) && onEventFunc.call(that, args);
+                            avalon.type(afterEventFunc) == "function"
+                            && avalon.log("execute:after" + eventName) && afterEventFunc.call(that, args)
+                            if (one.stopNow === true || focusMethodFound)
+                                break;
+                        }
+                    }
                 }
-                $event.stopPropagation();
-                $event.preventDefault();
+
             }
+
             /**********************************内部工具函数************************************/
             /**
              * 把simpleDataArray构造成树形结构，用{id:xxx,pid:xxx}标记父子关系
@@ -399,13 +579,13 @@ define(['avalon', 'text!./simpletree.html', 'text!./simpletree.leaf.html', 'css!
             }
         });
         /*****************************事件监听*******************************************/
-        eventList.forEach(function (one) {
+        /*eventList.forEach(function (one) {
             var eventName = "on" + upperFirstLetter(one);
             vmodel.$watch("e:" + one, function () {
                 avalon.log("Fire Event : " + eventName);
                 (options.callback[eventName] || avalon.noop).call(null, arguments);
             })
-        })
+        })*/
         return vmodel;
     }
     widget.defaults = {
@@ -432,6 +612,10 @@ define(['avalon', 'text!./simpletree.html', 'text!./simpletree.leaf.html', 'css!
                 name: "name",
                 title: "",
                 url: "href"
+            },
+            keep: {
+                leaf: false,
+                parent: false
             }
         },
         callback: {//@param 回调相关的配置
@@ -442,6 +626,16 @@ define(['avalon', 'text!./simpletree.html', 'text!./simpletree.leaf.html', 'css!
             onSelect:avalon.noop,//@optMethod callback.onSelect(data) 节点被选中回调
             onUnselect:avalon.noop,//@optMethod callback.onUnselect(data) 节点被选中回调
             onContextmenu:avalon.noop,//@optMethod callback.onContextmenu(data) 节点右键单击回调
+            //编辑callback
+            beforeRename: avalon.noop,
+            beforeAdd: avalon.noop,
+            onRemove: avalon.noop,
+            onRename: avalon.noop,
+            onAdd: avalon.noop,
+        },
+        edit: {
+            enable: true,
+            editNameSelectAll: true,
         },
         onInit: avalon.noop,
         getTemplate: function (tmpl, opts, tplName) {return tmpl;}

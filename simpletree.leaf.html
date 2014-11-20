@@ -1,20 +1,26 @@
 <!-- +/-展开图标 -->
-<span class="button switch center_close"
+<span class="AreaExpand button switch center_close"
       ms-class="root_close      :el.isRoot"
       ms-class-1="roots_open    :el.isRoot && el.open"
       ms-class-2="center_open   :el.isParent && el.open"
       ms-class-3="center_docu   :!el.isParent"></span>
 <!-- 文件夹图标 + 文字 -->
 <a ms-href="el.href" ms-class="curSelectedNode: el.selected">
-    <span class="button ico_close"
+    <span class="AreaIcon button ico_close"
           ms-class="ico_open    :el.isParent && el.open"
           ms-class-1="ico_docu  :!el.isParent"></span>
     
-    <span>{{el.name | html}}</span>
+    <span class="AreaText">{{formatNodeName(el) | html}}</span>
+    <!-- 编辑功能 -->
+    <span class="edit-input" >
+        <input type="text" class="rename" ms-attr-id="'input_'+el.$id"
+               ms-attr-value="el.name"
+               >
+    </span>
 </a>
 
-<ul class="line" ms-if="el.children.length" ms-class="hide  :!el.open">
-    <li ms-repeat="el.children" ms-attr-treeid="el.$treeid">
+<ul class="line" ms-if="el.children.length" ms-class="hide  :!el.open" ms-attr-id="'children_'+el.$id">
+    <li ms-repeat="el.children" ms-attr-treeid="el.$treeid" ms-attr-id="el.$id">
         {{loadLeafTemplate(el)|html}}
     </li>
 </ul>
