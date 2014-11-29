@@ -140,14 +140,14 @@ avalon.vmodels[组件实例名].api(arguments...);
 #Event Dispatcher Rule
 ####处理过程
 1. 将所有可能触发的事件按照优先级排序
-2. 构造args参数{event,vmodel,vmodels}
-3. 传入fliter，若没有有返回值且没有指定强制触发此事件，则跳过此事件
-4. 将args传入fireReverse，若返回true，将执行反向事件，否则为正向事件
-5. 若callbacks中存在相关事件，执行beforeEvent
-6. 将args传入operation 
-7. 若callbacks中存在相关事件，执行onEvent
-8. 若callbacks中存在相关事件，执行afterEvent
-9. 若stopNow不为true，调到下一事件的Step2
+2. 构造`args`参数`{event,vmodel,vmodels}`
+3. 传入`fliter`，若没有有返回值且没有指定强制触发此事件，则跳过此事件
+4. 将`args`传入`fireReverse`，若返回`true`，将执行反向事件，否则为正向事件
+5. 若`callbacks`中存在相关事件，执行beforeEvent
+6. 将`args`传入`operation`
+7. 若`callbacks`中存在相关事件，执行onEvent
+8. 若`callbacks`中存在相关事件，执行afterEvent
+9. 若`stopNow`不为`true`，调到下一事件的Step2
 
 
 **Example:**
@@ -155,9 +155,9 @@ avalon.vmodels[组件实例名].api(arguments...);
 * Parameters
 	* `cmd` : 绑定在上面的事件,click,dblClick...
 	* `$event` : Javascript Event对象 或者 Plain Object，前者为正常触发，后者为强制触发
-	* `focusDirection` : true时指定为正向事件，false时指定为反向事件
+	* `focusDirection` : `true`时指定为正向事件，`false`时指定为反向事件
 * 强制触发
-	* $event包含下列属性
+	* `$event`包含下列属性
 		*  `eventName` ： 将要触发的事件Name
 		*  `args` ： 可自定义传入的额外args，额外args会在Step2时合并到构造的args中去
 		
