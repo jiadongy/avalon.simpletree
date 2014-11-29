@@ -396,8 +396,8 @@ define(['avalon', 'text!./simpletree.html', 'text!./simpletree.leaf.html', 'css!
                         fireReverse: avalon.noop,
                         operation: function(args){
                             vm.eventExecuter("click",{eventName:"select",args:{node:args.node}});
-                            var x = args.event.clientX,
-                                y = args.event.clientY;
+                            var x = args.event.offsetX + args.event.target.offsetLeft,
+                                y = args.event.offsetY + args.event.target.offsetTop;
                             avalon.css(contextMenuElement, "left", x);
                             avalon.css(contextMenuElement, "top", y);
                             avalon.css(contextMenuElement, "display", "block");
@@ -469,15 +469,23 @@ define(['avalon', 'text!./simpletree.html', 'text!./simpletree.leaf.html', 'css!
                                 onEventFunc = options.callback["on" + eventName],
                                 afterEventFunc = options.callback["after" + eventName];
 
-                            avalon.type(beforeEventFunc) == "function"
-                            && avalon.log("execute:before" + eventName) && beforeEventFunc.call(that, args);
+                            if(avalon.type(beforeEventFunc) == "function"){
+                                avalon.log("execute:before" + eventName)
+                                beforeEventFunc.call(that, args);
+                            }
 
                             one.operation.call(that, args);
 
-                            avalon.type(onEventFunc) == "function"
-                            && avalon.log("execute:on" + eventName) && onEventFunc.call(that, args);
-                            avalon.type(afterEventFunc) == "function"
-                            && avalon.log("execute:after" + eventName) && afterEventFunc.call(that, args)
+                            if(avalon.type(onEventFunc) == "function"){
+                                avalon.log("execute:on" + eventName)
+                                onEventFunc.call(that, args);
+                            }
+
+                            if(avalon.type(afterEventFunc) == "function"){
+                                avalon.log("execute:after" + eventName)
+                                afterEventFunc.call(that, args)
+                            }
+
                             if (one.stopNow === true || focusMethodFound)
                                 break;
                         }
@@ -631,11 +639,11 @@ define(['avalon', 'text!./simpletree.html', 'text!./simpletree.leaf.html', 'css!
             beforeAdd: avalon.noop,
             onRemove: avalon.noop,
             onRename: avalon.noop,
-            onAdd: avalon.noop,
+            onAdd: avalon.noop
         },
         edit: {
             enable: true,
-            editNameSelectAll: true,
+            editNameSelectAll: true
         },
         onInit: avalon.noop,
         getTemplate: function (tmpl, opts, tplName) {return tmpl;}

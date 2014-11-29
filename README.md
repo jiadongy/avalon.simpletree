@@ -6,6 +6,7 @@ a simple plugin of tree based on AvalonJs
 * 2014.11.10 : v0.1 参考了zTree,easyui.tree,oniUI.tree,加入了tree的基本功能<br>
 * 2014.11.12 : v0.11 加入DblClick响应、数个可配置项（formatter,callback...）,重构了代码结构
 * 2014.11.17 : v0.12 加入data可配置项，支持Simple和Normal两种节点输入格式，支持改变节点name，children，href字段名等
+* 2014.11.21 : v0.2 基于事件代理统一了内置事件和插件事件的触发机制，加入编辑节点功能，fix右键菜单位置偏差，fix点击右键菜单项不传入nodeVM，fix在空白区域单击时也会触发click事件
     
 #Configs
 * 类似zTree的配置项
@@ -35,6 +36,9 @@ a simple plugin of tree based on AvalonJs
 |........children|String		|children|`children`|
 |........name	|String		|name|`name`|	
 |........url	|String		|href|`href`|
+|**edit**		|Object		|编辑配置项||
+|...enable|Boolean|enable Edit|`true`|
+|...editNameSelectAll|Boolean		|select `name` text when edit|`true`|
 |**callback**|Object		|回调函数配置项||
 |...onClick(data) | Function  |单击回调 |`Noop`|
 |...onClick(data) | Function  |单击回调 |`Noop`|
@@ -44,7 +48,10 @@ a simple plugin of tree based on AvalonJs
 |...onSelect(data) | Function  |选中回调|`Noop`|
 |...onUnselect(data) | Function  |取消选中回调 |`Noop`|
 |...onContextmenu(data) |Function   | 右键回调|`Noop`|
+|...beforeRename(data) |Function   | 编辑前回调|`Noop`|
+|...onRename(data) |Function   | 编辑回调|`Noop`|
 |**onInit(vmodel, options, vmodels)**| Function  | 组件初始化回调|`Noop`|
+
 
 ###Callback Function Parameter
 * 传入的是一个Object，有下列属性
@@ -62,7 +69,8 @@ a simple plugin of tree based on AvalonJs
 |Attribute Name	|Type			|Description|
 |---------------|---------------|------------|
 |$treeid		|Number			|递增的节点id|
-|$pId		    |Number			|递增的节点id，根节点为`"root"`|
+|$pId		    |Number			|父节点id，根节点为`"root"`|
+|isRoot			|Boolean		|节点是否是根节点|
 |select		    |Boolean		|节点是否选中|
 
 #APIs
@@ -100,6 +108,9 @@ avalon.vmodels[组件实例名].api(arguments...);
 |collapse   | nodeId | none      |收起Node |`collapse(0)`|
 |expandAll  | *noParameters* | none      |展开所有Node |`expandAll()`|
 |collapseAll| *noParameters*  |  none     |收起所有Node|`collapseAll()`|
+| beginEdit    | nodeId| none      |编辑Node的Name属性|`beginEdit(0)`|
+| endEdit    | nodeId| none      |结束编辑Node并保存|`endEdit(0)`|
+| cancelEdit    | nodeId| none      |结束编辑Node，不保存|`cancelEdit(0)`|
 
 #Usage
 在网页中添加如下片段:<br>
@@ -121,4 +132,57 @@ avalon.vmodels[组件实例名].api(arguments...);
         avalon.scan();
     })
 </script>
+```
+
+
+----------
+
+#Event Dispatcher Rule
+####处理过程
+1. 将所有可能触发的事件按照优先级排序
+2. 构造args参数{event,vmodel,vmodels}
+3. 传入fliter，若没有有返回值且没有指定强制触发此事件，则跳过此事件
+4. 将args传入fireReverse，若返回true，将执行反向事件，否则为正向事件
+5. 若callbacks中存在相关事件，执行beforeEvent
+6. 将args传入operation 
+7. 若callbacks中存在相关事件，执行onEvent
+8. 若callbacks中存在相关事件，执行afterEvent
+9. 若stopNow不为true，调到下一事件的Step2
+
+
+**Example:**
+`eventExecuter(cmd, $event, focusDirection)`
+* Parameters
+	* `cmd` : 绑定在上面的事件,click,dblClick...
+	* `$event` : Javascript Event对象 或者 Plain Object，前者为正常触发，后者为强制触发
+	* `focusDirection` : true时指定为正向事件，false时指定为反向事件
+* 强制触发
+	* $event包含下列属性
+		*  `eventName` ： 将要触发的事件Name
+		*  `args` ： 可自定义传入的额外args，额外args会在Step2时合并到构造的args中去
+		
+```javascript
+click: //绑定在click上的事件代理
+[                        
+	{
+        priority: 2,						//此事件的优先级
+        eventName: "expand",				//此事件的Name
+        reverseName: "collapse",			//此事件的反向事件的Name
+        stopNow: false,						//true时不再处理其后的事件
+        fliter: function (args) {			//有返回值时表明此事件会被执行
+            var target = args.event.target, nodeId;
+            if (target.nodeName === "SPAN" && target.parentNode.nodeName === "LI") {
+                nodeId = avalon(target.parentNode).attr('treeid');
+                args.node = getNode(nodeId);
+                return args;
+            }
+        },
+        fireReverse: function (args) {		//返回true时表明触发此事件的反向事件
+            return args.node.open
+        },
+        operation: function (args) {		//此事件真正的处理过程
+            _toggleExpand(args.node.$treeid);
+        }
+    }
+]
 ```
